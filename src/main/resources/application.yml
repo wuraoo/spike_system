@@ -1,0 +1,36 @@
+server:
+  port: 8001
+
+spring:
+  # 数据源配置
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/spike_system?serverTimezone=UTC&useUnicode=true&characterEncoding=UTF-8
+    password: root
+    username: root
+    # 连接池配置
+    hikari:
+      # 连接池名称
+      pool-name: myPool
+      # 最小连接数
+      minimum-idle: 5
+      # 最大空闲连接时间
+      idle-timeout: 1800000
+      # 最大连接数
+      maximum-pool-size: 15
+      # 自动提交
+      auto-commit: true
+      # 连接最大存活时间，0表示永久有效
+      max-lifetime: 1800000
+
+mybatis-plus:
+  # 配置Mapper.xml的映射文件
+  mapper-locations: classpath*:/mapper/*mapper.xml
+  # 配置实体类的别名
+  type-aliases-package: com.zjj.spike_system.entity
+
+#sql日志输出
+logging:
+  level:
+    com.zjj.spike_system.mapper: debug
+
