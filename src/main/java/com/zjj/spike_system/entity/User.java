@@ -46,6 +46,7 @@ public class User implements Serializable {
     private String head;
 
     @ApiModelProperty(value = "登录次数")
+    @TableField(fill = FieldFill.UPDATE)
     private Integer logincount;
 
     @ApiModelProperty(value = "逻辑删除")

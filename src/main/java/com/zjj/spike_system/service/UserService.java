@@ -2,6 +2,8 @@ package com.zjj.spike_system.service;
 
 import com.zjj.spike_system.entity.User;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.zjj.spike_system.entity.vo.LoginVo;
+import com.zjj.spike_system.utils.Result;
 
 /**
  * <p>
@@ -13,4 +15,5 @@ import com.baomidou.mybatisplus.extension.service.IService;
  */
 public interface UserService extends IService<User> {
 
+    Result userLogin(LoginVo user);
 }
