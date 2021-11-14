@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.util.UUID;
@@ -33,17 +34,28 @@ public class UserController {
     @Autowired
     private UserService userService;
 
+    @GetMapping("goods")
+    public Result showGoods(HttpSession session, @CookieValue("token") String token){
+        log.info("token:" + token);
+        log.info(session.getAttribute(token).toString());
+        if (token == null)
+            return Result.error();
+        if (session.getAttribute(token) == null)
+            return Result.error();
+        return Result.ok();
+    }
+
 
     @ApiOperation("用户登录方法")
     @PostMapping("login")
-    @CrossOrigin
-    public Result userLogin(@RequestBody LoginVo user, HttpServletResponse response){
+    public Result userLogin(@RequestBody LoginVo user, HttpServletResponse response,HttpSession session){
         log.info(user.toString());
         Result result = userService.userLogin(user);
         if (result.getData() != null){
             System.out.println(result.getData());
             String token = UUID.randomUUID().toString().replace("-", "");
-            Cookie cookie = new Cookie("user", token);
+            session.setAttribute(token, result.getData());
+            Cookie cookie = new Cookie("token", token);
             response.addCookie(cookie);
         }
         return  result;
