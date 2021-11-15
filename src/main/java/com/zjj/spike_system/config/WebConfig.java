@@ -2,19 +2,32 @@ package com.zjj.spike_system.config;
 
 import org.mapstruct.Mapper;
 import org.mybatis.spring.annotation.MapperScan;
-import org.springframework.context.annotation.Bean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
+import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import java.util.List;
 
 @Configuration
 @MapperScan("com.zjj.spike_system.mapper")  //扫描包
 public class WebConfig implements WebMvcConfigurer {
 
-    /*
+    @Autowired
+    private UserArgumentResolver userArgumentResolver;
+
+    /**
+     * 该方法作用在调用Controller方法的参数传入之前
+     * @param resolvers
+     */
+    @Override
+    public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
+        // userArgumentResolver该类对Controller传入的参数做了处理
+        resolvers.add(userArgumentResolver);
+    }
+
+    /**
     * 配置跨域：也可以在Controller上使用    @CrossOrigin注解
     * */
     @Override

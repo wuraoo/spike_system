@@ -10,6 +10,7 @@ import com.zjj.spike_system.utils.ResultCode;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.Cookie;
@@ -33,29 +34,33 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+    @Autowired
+    private RedisTemplate redisTemplate;
 
+    @ApiOperation("显示商品信息访问接口")
     @GetMapping("goods")
-    public Result showGoods(HttpSession session, @CookieValue("token") String token){
-        log.info("token:" + token);
-        log.info(session.getAttribute(token).toString());
-        if (token == null)
-            return Result.error();
-        if (session.getAttribute(token) == null)
+    public Result showGoods(User user){
+        // 注意：这里的User参数不是由前端传入的，而是由addArgumentResolvers方法处理之后传进来的
+        log.info(user.toString());
+        if (user == null)
             return Result.error();
         return Result.ok();
     }
 
 
-    @ApiOperation("用户登录方法")
+    @ApiOperation("用户登录接口")
     @PostMapping("login")
     public Result userLogin(@RequestBody LoginVo user, HttpServletResponse response,HttpSession session){
         log.info(user.toString());
+        // 从数据库获取用户信息并判断是否正确
         Result result = userService.userLogin(user);
         if (result.getData() != null){
-            System.out.println(result.getData());
             String token = UUID.randomUUID().toString().replace("-", "");
-            session.setAttribute(token, result.getData());
+            // session设置值
+            session.setAttribute(token, result.getData().get("user"));
+            // 创建cookie
             Cookie cookie = new Cookie("token", token);
+            // 添加cookie
             response.addCookie(cookie);
         }
         return  result;
