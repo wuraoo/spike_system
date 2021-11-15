@@ -37,17 +37,6 @@ public class UserController {
     @Autowired
     private RedisTemplate redisTemplate;
 
-    @ApiOperation("显示商品信息访问接口")
-    @GetMapping("goods")
-    public Result showGoods(User user){
-        // 注意：这里的User参数不是由前端传入的，而是由addArgumentResolvers方法处理之后传进来的
-        log.info(user.toString());
-        if (user == null)
-            return Result.error();
-        return Result.ok();
-    }
-
-
     @ApiOperation("用户登录接口")
     @PostMapping("login")
     public Result userLogin(@RequestBody LoginVo user, HttpServletResponse response,HttpSession session){
@@ -60,6 +49,8 @@ public class UserController {
             session.setAttribute(token, result.getData().get("user"));
             // 创建cookie
             Cookie cookie = new Cookie("token", token);
+            // 设置cookie的path，不设置将会导致访问其他Controller的时候无法携带cookie
+            cookie.setPath("/spike_system");
             // 添加cookie
             response.addCookie(cookie);
         }

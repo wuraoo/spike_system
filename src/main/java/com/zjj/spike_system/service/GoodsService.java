@@ -1,8 +1,7 @@
 package com.zjj.spike_system.service;
 
-import com.zjj.spike_system.entity.User;
+import com.zjj.spike_system.entity.Goods;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.zjj.spike_system.entity.vo.LoginVo;
 import com.zjj.spike_system.utils.Result;
 
 /**
@@ -11,10 +10,9 @@ import com.zjj.spike_system.utils.Result;
  * </p>
  *
  * @author zjj
- * @since 2021-11-12
+ * @since 2021-11-15
  */
-public interface UserService extends IService<User> {
+public interface GoodsService extends IService<Goods> {
 
-    Result userLogin(LoginVo user);
-
+    Result getGoods(Integer pageNum, Integer pageSize);
 }

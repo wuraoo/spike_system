@@ -11,7 +11,6 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import java.util.List;
 
 @Configuration
-@MapperScan("com.zjj.spike_system.mapper")  //扫描包
 public class WebConfig implements WebMvcConfigurer {
 
     @Autowired

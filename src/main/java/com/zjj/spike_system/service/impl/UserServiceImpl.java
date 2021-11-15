@@ -1,6 +1,7 @@
 package com.zjj.spike_system.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.zjj.spike_system.entity.User;
 import com.zjj.spike_system.entity.vo.LoginVo;
 import com.zjj.spike_system.mapper.UserMapper;
@@ -39,9 +40,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             String md5Pass = MD5Util.inputPassToDBPass(user.getPassword(), slat);
             // 3.密码比较
             if (StringUtils.equals(md5Pass, one.getPassword())){
+                // 密码一致
+                // 登陆次数+1，并自动填充最后修改时间
+                one.setLogincount(one.getLogincount() + 1);
+                this.updateById(one);
                 return Result.ok().setData("user", one);
             }
         }
         return Result.setResult(ResultCode.LOGIN_ERROR);
     }
+
 }

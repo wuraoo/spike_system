@@ -56,6 +56,7 @@ public class UserArgumentResolver implements HandlerMethodArgumentResolver {
                 break;
             }
         }
+        System.out.println("==============" + token);
         // 如果token不存在，则返回null
         if (token == null) return null;
         // 获取session中对象
