@@ -30,12 +30,7 @@ public class GoodsController {
 
     @ApiOperation("显示商品信息访问接口")
     @GetMapping("info")
-    public Result showGoods(User user, Integer pageNum, Integer pageSize){
-        // 注意：这里的User参数不是由前端传入的，而是由addArgumentResolvers方法处理之后传进来的
-        log.info(user.toString());
-        if (user == null)
-            return Result.error();
-        // 查询一般商品
+    public Result showGoods(Integer pageNum, Integer pageSize){
         Result res = goodsService.getGoods(pageNum,pageSize);
         return res;
     }

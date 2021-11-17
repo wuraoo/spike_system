@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zjj.spike_system.mapper.SkgoodsMapper">
+
+    <select id="getAllSkGoods" resultType="com.zjj.spike_system.entity.vo.SkGoodsVo">
+        select
+               a.id,
+               goods_name skGoodName,
+               goods_title skGoodTitle,
+               goods_img skGoodImg,
+               goods_detail skGoodDetail,
+               goods_price goodPrice,
+               spike_price skPrice,
+               spike_stock skStock,
+               start_date startTime,
+               end_date endTime
+            from spike_system_skgoods a left join spike_system_goods b on a.goods_id = b.id
+    </select>
+
+</mapper>

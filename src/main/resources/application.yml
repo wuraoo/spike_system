@@ -46,7 +46,7 @@ spring:
 
 mybatis-plus:
   # 配置Mapper.xml的映射文件
-  mapper-locations: classpath*:/mapper/*mapper.xml
+  mapper-locations: classpath*:/mapper/*Mapper.xml
   # 配置实体类的别名
   type-aliases-package: com.zjj.spike_system.entity
 

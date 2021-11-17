@@ -2,6 +2,11 @@ package com.zjj.spike_system.mapper;
 
 import com.zjj.spike_system.entity.Skgoods;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.zjj.spike_system.entity.vo.SkGoodsVo;
+import org.apache.ibatis.annotations.Mapper;
+import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 /**
  * <p>
@@ -13,4 +18,5 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  */
 public interface SkgoodsMapper extends BaseMapper<Skgoods> {
 
+    List<SkGoodsVo> getAllSkGoods();
 }
