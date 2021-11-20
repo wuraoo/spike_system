@@ -1,7 +1,10 @@
 package com.zjj.spike_system.service;
 
+import com.zjj.spike_system.entity.Skgoods;
 import com.zjj.spike_system.entity.Skorder;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.zjj.spike_system.entity.User;
+import com.zjj.spike_system.utils.Result;
 
 /**
  * <p>
@@ -13,4 +16,5 @@ import com.baomidou.mybatisplus.extension.service.IService;
  */
 public interface SkorderService extends IService<Skorder> {
 
+    Result addOrder(User user, Skgoods skgoods);
 }

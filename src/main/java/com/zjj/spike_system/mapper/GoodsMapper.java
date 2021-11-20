@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
  * @author zjj
  * @since 2021-11-15
  */
+@Mapper
 public interface GoodsMapper extends BaseMapper<Goods> {
 
 }

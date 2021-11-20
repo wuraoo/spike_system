@@ -5,6 +5,7 @@
     <select id="getAllSkGoods" resultType="com.zjj.spike_system.entity.vo.SkGoodsVo">
         select
                a.id,
+               goods_id goodId,
                goods_name skGoodName,
                goods_title skGoodTitle,
                goods_img skGoodImg,

@@ -16,6 +16,7 @@ import java.util.List;
  * @author zjj
  * @since 2021-11-15
  */
+@Mapper
 public interface SkgoodsMapper extends BaseMapper<Skgoods> {
 
     List<SkGoodsVo> getAllSkGoods();

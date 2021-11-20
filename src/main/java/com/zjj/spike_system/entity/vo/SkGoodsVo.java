@@ -9,12 +9,17 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.util.Date;
 
+/**
+ * 用于查询秒杀商品的信息
+ */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class SkGoodsVo {
-    @ApiModelProperty("id")
+    @ApiModelProperty("秒杀id")
     private  Long id;
+    @ApiModelProperty("商品id")
+    private  Long goodId;
     @ApiModelProperty("秒杀商品名称")
     private String skGoodName;
     @ApiModelProperty("秒杀商品标题")
