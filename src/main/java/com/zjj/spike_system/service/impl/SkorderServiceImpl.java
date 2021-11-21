@@ -5,6 +5,7 @@ import com.zjj.spike_system.entity.Order;
 import com.zjj.spike_system.entity.Skgoods;
 import com.zjj.spike_system.entity.Skorder;
 import com.zjj.spike_system.entity.User;
+import com.zjj.spike_system.mapper.OrderMapper;
 import com.zjj.spike_system.mapper.SkgoodsMapper;
 import com.zjj.spike_system.mapper.SkorderMapper;
 import com.zjj.spike_system.service.SkorderService;
@@ -29,6 +30,8 @@ public class SkorderServiceImpl extends ServiceImpl<SkorderMapper, Skorder> impl
 
     @Autowired
     private SkgoodsMapper skgoodsMapper;
+    @Autowired
+    private OrderMapper orderMapper;
 
 
     @Override
@@ -41,11 +44,19 @@ public class SkorderServiceImpl extends ServiceImpl<SkorderMapper, Skorder> impl
         }
 
         //创建普通订单，并默认支付(此步省略)
+        Order order = new Order();
+        order.setUserId(user.getId());
+        order.setGoodsId(skgoods.getGoodsId());
+        order.setGoodsName("秒杀商品");
+        order.setGoodsCount(1);
+        order.setGoodsPrice(skgoods.getSpikePrice());
+        orderMapper.insert(order);
 
         // 创建秒杀订单
         Skorder skorder = new Skorder();
         skorder.setUserId(user.getId());
         skorder.setGoodsId(skgoods.getId());
+        skorder.setOrderId(order.getId());
         boolean save = this.save(skorder);
 
         skgoods.setSpikeStock(skgoods.getSpikeStock() - 1);

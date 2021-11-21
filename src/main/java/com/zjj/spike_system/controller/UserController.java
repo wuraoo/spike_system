@@ -1,12 +1,9 @@
 package com.zjj.spike_system.controller;
 
 
-import com.sun.deploy.net.HttpResponse;
-import com.zjj.spike_system.entity.User;
 import com.zjj.spike_system.entity.vo.LoginVo;
 import com.zjj.spike_system.service.UserService;
 import com.zjj.spike_system.utils.Result;
-import com.zjj.spike_system.utils.ResultCode;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
