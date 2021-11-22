@@ -1,6 +1,7 @@
 package com.zjj.spike_system.controller;
 
 
+import com.zjj.spike_system.entity.User;
 import com.zjj.spike_system.entity.vo.LoginVo;
 import com.zjj.spike_system.service.UserService;
 import com.zjj.spike_system.utils.Result;
@@ -33,6 +34,14 @@ public class UserController {
     private UserService userService;
     @Autowired
     private RedisTemplate redisTemplate;
+
+
+    @GetMapping("info")
+    public User getUserInfo(User user){
+        log.info("---");
+        return user;
+    }
+
 
     @ApiOperation("用户登录接口")
     @PostMapping("login")
