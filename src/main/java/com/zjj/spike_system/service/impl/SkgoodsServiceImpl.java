@@ -8,6 +8,7 @@ import com.zjj.spike_system.service.SkgoodsService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.zjj.spike_system.utils.Result;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -26,9 +27,13 @@ public class SkgoodsServiceImpl extends ServiceImpl<SkgoodsMapper, Skgoods> impl
     @Autowired
     private SkgoodsMapper skgoodsMapper;
 
+    @Autowired
+    private RedisTemplate redisTemplate;
+
     @Override
     public Result getGoods() {
         List<SkGoodsVo> skGoods = skgoodsMapper.getAllSkGoods();
+        redisTemplate.opsForValue().set("skgoods", skGoods);
         return Result.ok().setData("skgoods", skGoods);
     }
 }

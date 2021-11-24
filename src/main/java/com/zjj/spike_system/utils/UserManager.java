@@ -20,7 +20,9 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -80,12 +82,12 @@ public class UserManager {
         rw.seek(0);
         for(int i=0; i<users.size(); i++){
             User user = users.get(i);
-            String s = doPostJson(loginUrl, "{\n" +
+            Map map = doPostJson(loginUrl, "{\n" +
                     "    \"nickname\": \""+user.getNickname()+"\",\n" +
                     "    \"password\": \"123456\"\n" +
                     "}");
 
-            String row = user.getNickname() + "," + s;
+            String row = map.get("SESSION") + "," + map.get("token");
             rw.seek(rw.length());
             rw.write(row.getBytes());
             rw.write("\r\n".getBytes());
@@ -98,11 +100,11 @@ public class UserManager {
      * @param json 请求参数
      * @return
      */
-    public static String doPostJson(String url, String json) {
+    public static Map<String,String> doPostJson(String url, String json) {
         // 创建Httpclient对象
         CloseableHttpClient httpClient = HttpClients.createDefault();
         CloseableHttpResponse response = null;
-        String resultString = "";
+        Map<String, String> map = new HashMap<>();
         try {
             // 创建Http Post请求
             HttpPost httpPost = new HttpPost(url);
@@ -114,9 +116,14 @@ public class UserManager {
             Header[] headers = response.getHeaders("Set-Cookie");
             for (Header h:headers) {
                 HeaderElement[] elements = h.getElements();
-                for (HeaderElement e : elements)
+
+                for (HeaderElement e : elements){
                     if ("token".equals(e.getName()))
-                        resultString = e.getValue();
+                        map.put("token", e.getValue());
+                    if ("SESSION".equals(e.getName()))
+                        map.put("SESSION", e.getValue());
+                }
+
             }
 //            resultString = EntityUtils.toString(response.getEntity(), "utf-8");
         } catch (Exception e) {
@@ -129,7 +136,7 @@ public class UserManager {
                 e.printStackTrace();
             }
         }
-        return resultString;
+        return map;
     }
 
     // 获取连接
@@ -144,6 +151,6 @@ public class UserManager {
 
     // main方法执行
     public static void main(String[] args) throws Exception {
-        addUser(2);
+        addUser(5000);
     }
 }
