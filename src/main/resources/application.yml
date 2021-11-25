@@ -42,6 +42,24 @@ spring:
         max-idle: 200
         # 最小空心啊时间
         min-idle: 5
+#  # web配置
+#  web:
+#    # 静态资源配置
+#    resources:
+#      # 启动默认静态资源处理，默认启用
+#      add-mappings: true
+#      # 设置静态资源缓存
+#      cache:
+#        cachecontrol:
+#          # （浏览器）缓存存在时间
+#          max-age: 30s
+#      chain:
+#        # 资源链启动缓存，默认启用
+#        cache: true
+#        # 启用资源连，默认禁用
+#        enabled: true
+#        # 启用压缩资源,默认禁用
+#        compressed: true
 
 
 mybatis-plus:
@@ -54,5 +72,4 @@ mybatis-plus:
 logging:
   level:
     com.zjj.spike_system.mapper: debug
-
 

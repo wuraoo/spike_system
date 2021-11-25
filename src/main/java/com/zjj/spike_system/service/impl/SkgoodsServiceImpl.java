@@ -12,6 +12,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * <p>
@@ -33,7 +34,8 @@ public class SkgoodsServiceImpl extends ServiceImpl<SkgoodsMapper, Skgoods> impl
     @Override
     public Result getGoods() {
         List<SkGoodsVo> skGoods = skgoodsMapper.getAllSkGoods();
-        redisTemplate.opsForValue().set("skgoods", skGoods);
+        // 设置1S有效时间的缓存
+        redisTemplate.opsForValue().set("skgoods", skGoods,1, TimeUnit.SECONDS);
         return Result.ok().setData("skgoods", skGoods);
     }
 }
