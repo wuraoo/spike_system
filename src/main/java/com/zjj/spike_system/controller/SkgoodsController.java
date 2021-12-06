@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * <p>
@@ -51,8 +52,10 @@ public class SkgoodsController {
 
         // 否则查询数据库，并将结果放到Redis中缓存
         // 查询秒杀商品（封装到SkGoodsVo中返回）
-        Result res = skgoodsService.getGoods();
-        return res;
+        List<SkGoodsVo> skGoods = skgoodsService.getGoods();
+        // 设置5S有效时间的缓存
+        redisTemplate.opsForValue().set("skgoods", skGoods,5, TimeUnit.SECONDS);
+        return Result.ok().setData("skgoods", skGoods);
     }
 
 }

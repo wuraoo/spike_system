@@ -2,7 +2,10 @@ package com.zjj.spike_system.service;
 
 import com.zjj.spike_system.entity.Skgoods;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.zjj.spike_system.entity.vo.SkGoodsVo;
 import com.zjj.spike_system.utils.Result;
+
+import java.util.List;
 
 /**
  * <p>
@@ -14,5 +17,5 @@ import com.zjj.spike_system.utils.Result;
  */
 public interface SkgoodsService extends IService<Skgoods> {
 
-    Result getGoods();
+    List<SkGoodsVo> getGoods();
 }

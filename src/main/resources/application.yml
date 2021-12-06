@@ -5,7 +5,7 @@ spring:
   # 数据源配置
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://192.168.1.117:3306/spike_system?serverTimezone=UTC&useUnicode=true&characterEncoding=UTF-8
+    url: jdbc:mysql://192.168.1.118:3306/spike_system?serverTimezone=UTC&useUnicode=true&characterEncoding=UTF-8
     password: 123456
     username: root
     # 连接池配置
@@ -25,7 +25,7 @@ spring:
   # 配置redis
   redis:
     # 主机地址
-    host: 192.168.1.117
+    host: 192.168.1.118
     # 数据库
     database: 0
     # 端口
@@ -42,6 +42,39 @@ spring:
         max-idle: 200
         # 最小空心啊时间
         min-idle: 5
+  # MQ配置
+  rabbitmq:
+    host: 192.168.1.118
+    port: 5672
+    username: root
+    password: root
+    listener:
+      simple:
+        # 消费者最小数量
+        concurrency: 10
+        # 消费者最大数量
+        max-concurrency: 10
+        # 限制消费者每次只处理一条消息，处理完再继续处理下一条消息
+        prefetch: 1
+        # 启动时是否默认启动容器
+        auto-startup: true
+        # 被拒绝时是否重新进入队列
+        default-requeue-rejected: true
+    # 模板配置
+    template:
+      retry:
+        # 开启重试
+        enabled: true
+        # 重试时间
+        initial-interval: 1000ms
+        # 重试最大次数,默认3次
+        max-attempts: 3
+        # 重试最大间隔时间，默认10000ms
+        max-interval: 10000ms
+        # 重试的间隔乘数
+        multiplier: 1
+
+
 #  # web配置
 #  web:
 #    # 静态资源配置

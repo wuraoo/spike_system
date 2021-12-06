@@ -32,10 +32,8 @@ public class SkgoodsServiceImpl extends ServiceImpl<SkgoodsMapper, Skgoods> impl
     private RedisTemplate redisTemplate;
 
     @Override
-    public Result getGoods() {
+    public List<SkGoodsVo> getGoods() {
         List<SkGoodsVo> skGoods = skgoodsMapper.getAllSkGoods();
-        // 设置1S有效时间的缓存
-        redisTemplate.opsForValue().set("skgoods", skGoods,1, TimeUnit.SECONDS);
-        return Result.ok().setData("skgoods", skGoods);
+        return skGoods;
     }
 }

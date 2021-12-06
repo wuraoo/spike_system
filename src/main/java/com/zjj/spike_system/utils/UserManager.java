@@ -141,7 +141,7 @@ public class UserManager {
 
     // 获取连接
     public static Connection getConnection() throws Exception {
-        String url = "jdbc:mysql://192.168.1.117:3306/spike_system?serverTimezone=UTC&useUnicode=true&characterEncoding=UTF-8";
+        String url = "jdbc:mysql://192.168.1.118:3306/spike_system?serverTimezone=UTC&useUnicode=true&characterEncoding=UTF-8";
         String name = "root";
         String pwd = "123456";
         Class.forName("com.mysql.cj.jdbc.Driver");

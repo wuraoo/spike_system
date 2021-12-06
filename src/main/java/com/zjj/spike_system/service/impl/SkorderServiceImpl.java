@@ -1,6 +1,7 @@
 package com.zjj.spike_system.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.zjj.spike_system.entity.Order;
 import com.zjj.spike_system.entity.Skgoods;
 import com.zjj.spike_system.entity.Skorder;
@@ -8,14 +9,20 @@ import com.zjj.spike_system.entity.User;
 import com.zjj.spike_system.mapper.OrderMapper;
 import com.zjj.spike_system.mapper.SkgoodsMapper;
 import com.zjj.spike_system.mapper.SkorderMapper;
+import com.zjj.spike_system.service.SkgoodsService;
 import com.zjj.spike_system.service.SkorderService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.zjj.spike_system.utils.Result;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 /**
  * <p>
@@ -26,24 +33,26 @@ import java.util.List;
  * @since 2021-11-15
  */
 @Service
+@Transactional
+@Slf4j
 public class SkorderServiceImpl extends ServiceImpl<SkorderMapper, Skorder> implements SkorderService {
-
-    @Autowired
-    private SkgoodsMapper skgoodsMapper;
     @Autowired
     private OrderMapper orderMapper;
+    @Autowired
+    private SkgoodsService skgoodsService;
+
+    @Autowired
+    private RedisTemplate redisTemplate;
 
 
     @Override
     public Result addOrder(User user, Skgoods skgoods) {
-        // 判断当前用户是否已经秒杀过
-        // 查询当前用户是否有该商品的秒杀记录
-        Skorder isHasOrder = this.getOne(new QueryWrapper<Skorder>().eq("user_id", user.getId()).eq("goods_id", skgoods.getId()));
-        if (isHasOrder != null){
-            return Result.error().setMessage("您已经抢过了噢~下次再来");
+        // 更新库存,这里存在问题
+        boolean isUpdate = skgoodsService.update(new UpdateWrapper<Skgoods>().setSql("spike_stock = spike_stock - 1").eq("id", skgoods.getId()).gt("spike_stock", 0));
+        if (isUpdate == false){
+            return Result.error().setMessage("来晚了~已经抢完了~");
         }
-
-        //创建普通订单，并默认支付(此步省略)
+        //创建普通订单，并默认支付
         Order order = new Order();
         order.setUserId(user.getId());
         order.setGoodsId(skgoods.getGoodsId());
@@ -59,11 +68,10 @@ public class SkorderServiceImpl extends ServiceImpl<SkorderMapper, Skorder> impl
         skorder.setOrderId(order.getId());
         boolean save = this.save(skorder);
 
-        skgoods.setSpikeStock(skgoods.getSpikeStock() - 1);
-        skgoodsMapper.updateById(skgoods);
-
         // 成功则秒杀成功
         if (save){
+            // 将秒杀订单放在Redis中，当用户重复秒杀的时候只需要从Redis中获取判断即可
+            redisTemplate.opsForValue().set("skorder" + user.getId() + skgoods.getId(), skorder,1, TimeUnit.MINUTES);
             return Result.ok();
         }
 

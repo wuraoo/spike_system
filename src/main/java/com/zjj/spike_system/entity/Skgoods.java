@@ -31,7 +31,7 @@ public class Skgoods implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @ApiModelProperty(value = "秒杀商品id")
-      @TableId(value = "id", type = IdType.ASSIGN_ID)
+    @TableId(value = "id", type = IdType.ASSIGN_ID)
     private Long id;
 
     @ApiModelProperty(value = "商品id，关联商品表原始信息")
