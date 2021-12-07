@@ -40,17 +40,21 @@ public class SkorderServiceImpl extends ServiceImpl<SkorderMapper, Skorder> impl
     private OrderMapper orderMapper;
     @Autowired
     private SkgoodsService skgoodsService;
-
+    @Autowired
+    private SkorderMapper skorderMapper;
     @Autowired
     private RedisTemplate redisTemplate;
 
 
     @Override
     public Result addOrder(User user, Skgoods skgoods) {
-        // 更新库存,这里存在问题
-        boolean isUpdate = skgoodsService.update(new UpdateWrapper<Skgoods>().setSql("spike_stock = spike_stock - 1").eq("id", skgoods.getId()).gt("spike_stock", 0));
-        if (isUpdate == false){
-            return Result.error().setMessage("来晚了~已经抢完了~");
+        // 更新库存
+        skgoods.setSpikeStock(skgoods.getSpikeStock()-1);
+        skgoodsService.update(new UpdateWrapper<Skgoods>().setSql("spike_stock = spike_stock - 1").eq("id", skgoods.getId()).gt("spike_stock", 0));
+        // 库存不足,如果redis中有该id的key，则表示该商品已经秒杀完
+        if (skgoods.getSpikeStock() < 1){
+            redisTemplate.opsForValue().set("isStockEmpty:" + skgoods.getId(), 0);
+            return null;
         }
         //创建普通订单，并默认支付
         Order order = new Order();
@@ -76,5 +80,29 @@ public class SkorderServiceImpl extends ServiceImpl<SkorderMapper, Skorder> impl
         }
 
         return null;
+    }
+
+    /**
+     * 获取用户秒杀结果，确认是否成功
+     * @param user
+     * @param goodId
+     * @return  >0表示秒杀成功   -1表示失败   0表示排队
+     */
+    @Override
+    public Long confirmSkResult(User user, Long goodId) {
+        QueryWrapper<Skorder> wrapper = new QueryWrapper<>();
+        wrapper.eq("user_id", user.getId()).eq("goods_id", goodId);
+        Skorder skorder = skorderMapper.selectOne(wrapper);
+        // 已经查询到
+        if (skorder != null){
+            return skorder.getId();
+        }
+        // 如果库存为0则表示失败
+        else if (redisTemplate.hasKey("isStockEmpty:" + goodId)){
+            return -1L;
+        }
+        else {
+            return 0L;
+        }
     }
 }

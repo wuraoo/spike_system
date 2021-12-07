@@ -17,4 +17,6 @@ import com.zjj.spike_system.utils.Result;
 public interface SkorderService extends IService<Skorder> {
 
     Result addOrder(User user, Skgoods skgoods);
+
+    Long confirmSkResult(User user, Long goodId);
 }

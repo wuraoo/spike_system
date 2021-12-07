@@ -111,9 +111,27 @@ public class SkorderController implements InitializingBean {
         */
     }
 
-
-
-
+    /**
+     * 确认用户是否下单成功(秒杀结果)
+     * @param user
+     * @param goodId
+     * @return
+     */
+    @GetMapping("confirm/{goodId}")
+    public Result confirmSkResult(User user, @PathVariable("goodId") Long goodId){
+        if(user == null){
+            return Result.error().setCode(22222).setMessage("请先登录");
+        }
+        Long res = skorderService.confirmSkResult(user,goodId);
+        log.info("------------------------" + res);
+        if (res == -1){
+            return Result.error().setMessage("抱歉，没抢到~");
+        }else if(res == 0){
+            return Result.error().setCode(23333).setMessage("排队中~");
+        }else{
+            return Result.ok().setMessage("秒杀成功");
+        }
+    }
 
     /**
      * Bean初识化时执行的方法：
