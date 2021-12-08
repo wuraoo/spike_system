@@ -373,7 +373,7 @@ TPS（每秒传输的事物处理个数）：服务器每秒处理的事务数
 | 第一次 |                299.7                |      110.6       |
 | 第二次 |                339.7                |       78.0       |
 | 第三次 |                335.1                |       90.4       |
-|  平均  |                                     |                  |
+|  平均  |                324.8                |        93        |
 
 `秒杀存在问题：`
 
@@ -385,7 +385,7 @@ TPS（每秒传输的事物处理个数）：服务器每秒处理的事务数
 
 
 
-## 六、优化
+## 六、性能优化
 
 ### 6.1 前端优化
 
@@ -543,11 +543,160 @@ TPS（每秒传输的事物处理个数）：服务器每秒处理的事务数
 
 
 
+### 6.3 再次测试
 
+到此一些基本的优化已经完成，再进行一次测试。
 
+|        | windows（CPU:10%;内存：73%）1000*10 |      |
+| :----: | :---------------------------------: | :--: |
+| 第一次 |                672.8                |      |
+| 第二次 |                670.0                |      |
+| 第三次 |                702.0                |      |
+|  平均  |                681.6                |      |
 
+**通过与第一次压测时的比较，可以看到秒杀接口的QPS可以达到两倍以上。**且数据库没有问题。
 
 **6.2.3 分库分表**
 
 
+
+## 七、其他优化
+
+### 7.1 Redis实现分布式锁
+
+在项目中，由于预先缓存了库存，使用incr的原子性可以实现目标。但是为了更好的处理分布式下的环境，所以改为使用Redis实现的**分布式锁**。
+
+**1.基本实现方式：**
+
+> 可以使用Redis的`SETNX`命令（只有当key不存在的时候才能生效），一般步骤为：
+>
+> 1. setnx key value：获取锁（获取不到则表示被占用）
+> 2. del key：释放锁，操作完成之后释放锁使其他线程可以使用
+> 3. expire key time：对于锁的声明需要为其添加过期时间，因为在1、2之间出现异常导致没有释放锁则会导致锁一直不被释放。
+>
+> 代码如下：
+>
+> ```java
+> ValueOperations opsForValue = redisTemplate.opsForValue();
+> // 1.获取锁，并指定过期时间
+> Boolean isLock = opsForValue.setIfAbsent("lock", "1", 5, TimeUnit.SECONDS);
+> // 获取成功
+> if (isLock){
+>     // ......具体的操作
+>     // 2.操作完成之后删除锁
+>     redisTemplate.delete("lock");
+> }else{
+>     // 获取锁失败
+> }
+> ```
+
+**2.出现问题：**
+
+> 由于设置了过期时间，所以在某些情况下线程无法在规定过期时间内处理完业务则会提前释放锁，然后其他线程就可以获取锁进行操作；过了一段时间第一个线程操作完便会执行删除锁操作，但是原本的锁已经被释放，所以删除的就是其他线程的锁——最总导致**锁的误删**。
+>
+> 如下图所示：
+>
+> ![简单锁](秒杀项目文档.assets/简单锁.png)
+
+**3.问题解决：**
+
+> 可以为每个锁的value设置唯一的值，每次删除锁的时候都先判断这个锁是否是自己的，只有是自己的锁才会删除。
+>
+> 代码如下：
+>
+> ```java
+> // 生成锁的唯一值
+> String val = UUID.randomUUID().toString().replace("-", "");
+> Boolean isLock = opsForValue.setIfAbsent("lock", val, 5, TimeUnit.SECONDS);
+> if (isLock){
+>     // ......
+>     // 获取锁的值并判断是否一致
+>     String lock = (String)opsForValue.get("lock");
+>     if (val.equals(lock)){
+>         redisTemplate.delete("lock");
+>     }
+> }
+> ```
+>
+> 又出现问题：上面的代码中，释放锁有三步：
+>
+> 1. 获取锁
+> 2. 比较锁
+> 3. 删除锁
+>
+> 很明显，这三个步骤不是原子性的，所以要使用到`Lua脚本`。简单的实现代码如下：
+>
+> 脚本：
+>
+> ```lua
+> if redis.call("get",KEYS[1])==ARGV[1] then
+>     return redis.call("del",KEY[1])
+> else
+>     return 0
+> end
+> ```
+>
+> 加载脚本：
+>
+> ```java
+> @Bean
+> public DefaultRedisScript<Boolean> script(){
+>     DefaultRedisScript<Boolean> redisScript = new DefaultRedisScript<>();
+>     // 加载lua脚本: resources目录下
+>     redisScript.setLocation(new ClassPathResource("lock.lua"));
+>     redisScript.setResultType(Boolean.class);
+>     return redisScript;
+> }
+> ```
+>
+> 执行:
+>
+> ```java
+> @Autowired
+> private RedisTemplate redisTemplate;
+> @Autowired
+> private DefaultRedisScript script;
+> 
+> @Test
+> public void test1(){
+>     ValueOperations opsForValue = redisTemplate.opsForValue();
+>     // 获取锁，并指定过期时间
+>     // 生成锁的唯一值
+>     String val = UUID.randomUUID().toString().replace("-", "");
+>     Boolean isLock = opsForValue.setIfAbsent("lock", val,5, TimeUnit.SECONDS);
+>     if (isLock){
+>         // ......
+>         // 执行lua脚本
+>         Boolean result = (Boolean)redisTemplate.execute(script, Collections.singletonList("lock"), val);
+>         System.out.println(result);
+>     }else{
+>         // 获取锁失败
+>         System.out.println("被占用");
+>     }
+> }
+> ```
+
+**项目应用：**（详情见：stock.lua脚本文件、RedisConfig配置类、SkorderController类）
+
+脚本：
+
+```lua
+if (redis.call("exists", KEYS[1]) == 1) then
+    local stock = tonumber(redis.call("get",KEYS[1]));
+    if(stock>0) then
+        redis.call("incrby",KEYS[1],-1);
+        return stock;
+    end;
+        return 0;
+end;
+```
+
+应用：
+
+```
+// 原本使用decr来实现库存技术
+// Long count = opsForValue.decrement("skGoods:" + skid);
+// 使用分布式锁处理缓存中的库存
+Long count = (Long) redisTemplate.execute(script, Collections.singletonList("skGoods:" + skid), Collections.emptyList());
+```
 

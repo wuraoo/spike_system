@@ -50,7 +50,7 @@ public class UserArgumentResolver implements HandlerMethodArgumentResolver {
         HttpSession session = request.getSession();
         Cookie[] cookies = request.getCookies();
         String token = null;
-        if (cookies.length <= 0) return null;
+        if (cookies == null || cookies.length <= 0) return null;
         for (Cookie c : cookies){
             if (c.getName().equals("token")){
                 token = c.getValue();

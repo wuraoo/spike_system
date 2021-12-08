@@ -19,6 +19,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -26,10 +27,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * <p>
@@ -51,6 +49,8 @@ public class SkorderController implements InitializingBean {
     private RedisTemplate redisTemplate;
     @Autowired
     private MQSender mqSender;
+    @Autowired
+    private DefaultRedisScript script;
 
     // 使用内存标记：记录各个商品是否库存是否足够，以减少与redis的通信
     private Map<Long,Boolean> isGoodsEmpty = new HashMap<>();
@@ -72,11 +72,14 @@ public class SkorderController implements InitializingBean {
         if(isGoodsEmpty.get(skid)){
             return Result.error().setMessage("对不起,库存不足");
         }
-        Long count = opsForValue.decrement("skGoods:" + skid);
-        if (count < 0){
+        // Long count = opsForValue.decrement("skGoods:" + skid);
+        // 使用分布式锁处理缓存中的库存
+        Long count = (Long) redisTemplate.execute(script, Collections.singletonList("skGoods:" + skid), Collections.emptyList());
+        log.info("==================================" + count);
+        if (count <= 0){
             // 将内存标记置为true
             isGoodsEmpty.put(skid, true);
-            opsForValue.increment("skGoods:" + skid);
+//            opsForValue.increment("skGoods:" + skid);
             return Result.error().setMessage("对不起,库存不足");
         }
         // 下订单
