@@ -1,19 +1,17 @@
 package com.zjj.spike_system.controller;
 
 
-import com.rabbitmq.tools.json.JSONUtil;
-import com.zjj.spike_system.entity.Skgoods;
 import com.zjj.spike_system.entity.Skorder;
 import com.zjj.spike_system.entity.User;
 import com.zjj.spike_system.entity.message.SkMessage;
 import com.zjj.spike_system.entity.vo.SkGoodsVo;
-import com.zjj.spike_system.mapper.SkgoodsMapper;
-import com.zjj.spike_system.mapper.SkorderMapper;
 import com.zjj.spike_system.rabbitmq.MQSender;
 import com.zjj.spike_system.service.SkgoodsService;
 import com.zjj.spike_system.service.SkorderService;
 import com.zjj.spike_system.utils.JsonUtil;
 import com.zjj.spike_system.utils.Result;
+import com.zjj.spike_system.utils.VerCodeUtil;
+import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,13 +19,10 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.util.CollectionUtils;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  * <p>
@@ -55,12 +50,71 @@ public class SkorderController implements InitializingBean {
     // 使用内存标记：记录各个商品是否库存是否足够，以减少与redis的通信
     private Map<Long,Boolean> isGoodsEmpty = new HashMap<>();
 
-    @GetMapping("buy/{skid}")
-    public Result SpikeGoods(User user, @PathVariable("skid") Long skid){
+    @PostMapping("check/vercode")
+    public Result checkCode(User user, @RequestBody Map<String,String> map){
+        if (user == null){
+            return Result.error().setCode(22222).setMessage("请先登录");
+        }
+
+        String verCode = map.get("vercode");
+        String goodId = map.get("goodId");
+        String redisCode = (String) redisTemplate.opsForValue().get("verCode:" + goodId + ":" + user.getId());
+        if (verCode == null || redisCode == null || !verCode.equals(redisCode)){
+            return Result.error().setMessage("验证码错误");
+        }
+        return Result.ok();
+    }
+
+
+    @ApiOperation("获取验证码")
+    @GetMapping("vercode")
+    public Result getVerCode(User user, Long goodId){
+        if (user == null){
+            return Result.error().setCode(22222).setMessage("请先登录");
+        }
+
+        Map<String, String> captcha = VerCodeUtil.getArithmeticCaptcha(130,48,4);
+        // 将验证码存入redis并设置过期事件
+        redisTemplate.opsForValue().set("verCode:" + goodId + ":" + user.getId(), captcha.get("verCode"), 5, TimeUnit.MINUTES);
+        return Result.ok().setData("image", captcha.get("image"));
+    }
+
+    /**
+     * 获取隐藏路径
+     * @param user
+     * @param goodId
+     * @return
+     */
+    @GetMapping("path/{goodId}")
+    public Result getPath(User user, @PathVariable("goodId") Long goodId){
+        if (user == null){
+            return Result.error().setCode(22222).setMessage("请先登录");
+        }
+        // 生成随机的隐藏路径并返回给前端
+        String path = skorderService.getPath(goodId, user.getId());
+        return Result.ok().setData("path", path);
+    }
+
+
+    /**
+     * 秒杀接口
+     * @param user
+     * @param skid
+     * @return
+     */
+    @GetMapping("{path}/buy/{skid}")
+    public Result SpikeGoods(User user, @PathVariable("path") String path, @PathVariable("skid") Long skid){
         // 用户未登录（一般不会出现，因为未登录不出显示秒杀页面）
         if (user == null){
             return Result.error().setCode(22222).setMessage("请先登录");
         }
+
+        // 判断隐藏地址是正确
+        boolean check = skorderService.checkPath(path,skid,user.getId());
+        if (!check){
+            return  Result.error().setMessage("非法请求");
+        }
+
         ValueOperations opsForValue = redisTemplate.opsForValue();
         // 判断是否重复抢购
         Skorder isSpiked = (Skorder)opsForValue.get("skorder" + user.getId() + skid);
@@ -75,7 +129,6 @@ public class SkorderController implements InitializingBean {
         // Long count = opsForValue.decrement("skGoods:" + skid);
         // 使用分布式锁处理缓存中的库存
         Long count = (Long) redisTemplate.execute(script, Collections.singletonList("skGoods:" + skid), Collections.emptyList());
-        log.info("==================================" + count);
         if (count <= 0){
             // 将内存标记置为true
             isGoodsEmpty.put(skid, true);

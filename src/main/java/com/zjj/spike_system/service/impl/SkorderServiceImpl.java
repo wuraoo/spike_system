@@ -7,11 +7,11 @@ import com.zjj.spike_system.entity.Skgoods;
 import com.zjj.spike_system.entity.Skorder;
 import com.zjj.spike_system.entity.User;
 import com.zjj.spike_system.mapper.OrderMapper;
-import com.zjj.spike_system.mapper.SkgoodsMapper;
 import com.zjj.spike_system.mapper.SkorderMapper;
 import com.zjj.spike_system.service.SkgoodsService;
 import com.zjj.spike_system.service.SkorderService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.zjj.spike_system.utils.MD5Util;
 import com.zjj.spike_system.utils.Result;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,9 +19,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -104,5 +102,38 @@ public class SkorderServiceImpl extends ServiceImpl<SkorderMapper, Skorder> impl
         else {
             return 0L;
         }
+    }
+
+    /**
+     * 获取隐藏地址
+     * @param goodId
+     * @param userId
+     * @return
+     */
+    @Override
+    public String getPath(Long goodId, Long userId) {
+        // 获取随机值并加密，作为隐藏路径
+        String uuid = UUID.randomUUID().toString().replace("-", "");
+        String path = MD5Util.md5(uuid);
+        redisTemplate.opsForValue().set("skPath:" + goodId +  ":" + userId, path, 30, TimeUnit.SECONDS);
+        return path;
+    }
+
+    /**
+     * 验证隐藏地址是否正确
+     * @param path
+     * @param goodId
+     * @param userId
+     * @return
+     */
+    @Override
+    public boolean checkPath(String path, Long goodId, Long userId) {
+        String redisPath = (String) redisTemplate.opsForValue().get("skPath:" + goodId + ":" + userId);
+        if (path == null || userId <= 0 || goodId <= 0 || redisPath == null){
+            return false;
+        }
+        if (path.equals(redisPath))
+            return true;
+        return false;
     }
 }

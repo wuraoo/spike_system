@@ -19,4 +19,8 @@ public interface SkorderService extends IService<Skorder> {
     Result addOrder(User user, Skgoods skgoods);
 
     Long confirmSkResult(User user, Long goodId);
+
+    String getPath(Long goodId, Long id);
+
+    boolean checkPath(String path, Long skid, Long id);
 }

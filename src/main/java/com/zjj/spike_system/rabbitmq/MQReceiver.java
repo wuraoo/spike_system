@@ -52,7 +52,7 @@ public class MQReceiver {
         }
         // 判断是否重复抢购
         QueryWrapper<Skorder> wrapper = new QueryWrapper<>();
-        wrapper.eq("goods_id", skGood).eq("user_id", user.getId());
+        wrapper.eq("goods_id", goodId).eq("user_id", user.getId());
         Skorder isSpiked = skorderService.getOne(wrapper);
         if (!Objects.isNull(isSpiked)){
             return;
